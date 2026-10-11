@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizontal Projectile Motion Setup</title>
+    
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- html2canvas for capturing clipboard verification proof -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* Cross-Platform Font Stack: Windows (Segoe UI), Chromebooks (Roboto), Mac (-apple-system) */
+        body {
+            font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 25px 15px;
+            box-sizing: border-box;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .trainer-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 960px;
+            padding: 28px;
+            box-sizing: border-box;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+        }
+
+        h2 {
+            text-align: center;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-size: 1.55em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.0em;
+            font-weight: 600;
+            margin-bottom: 2px;
+            padding: 9px 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .id-badge {
+            font-size: 11px;
+            color: #94a3b8;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+
+        .phase-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.88em;
+            border: 1px solid #bae6fd;
+            font-weight: 600;
+        }
+
+        /* Scaled Motion Diagram Container */
+        .diagram-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .diagram-container svg {
+            width: 100%;
+            max-width: 720px;
+            height: 155px;
+            overflow: visible;
+        }
+
+        /* Question Banner */
+        .question-container {
+            border: 1px solid #cbd5e1;
+            border-left: 6px solid #2563eb;
+            border-radius: 10px;
+            padding: 16px 20px;
+            background-color: #ffffff;
+            font-size: 1.15em;
+            line-height: 1.75;
+            color: #1e293b;
+        }
+
+        /* Compact Inline Drag Tiles */
+        .tile {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 7px;
+            margin: 0 2px;
+            border-radius: 5px;
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: grab;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            transition: transform 0.15s, opacity 0.15s, background-color 0.15s;
+            vertical-align: baseline;
+            line-height: 1.25;
+            user-select: none;
+        }
+
+        .tile:hover {
+            background-color: #1d4ed8;
+        }
+
+        .tile:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+
+        .tile.placed {
+            opacity: 0.35;
+            cursor: not-allowed;
+            text-decoration: line-through;
+            box-shadow: none;
+            background-color: #64748b;
+        }
+
+        .tile.selected {
+            outline: 2px solid #f59e0b;
+            transform: scale(1.04);
+        }
+
+        .no-break-punct {
+            white-space: nowrap;
+            display: inline;
+        }
+
+        /* Centered Instruction & Feedback Banners */
+        .instruction-banner {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.96em;
+            font-weight: 600;
+            border: 1px solid #bae6fd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 46px;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+
+        .instruction-banner.phase4-prompt {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-color: #93c5fd;
+        }
+
+        .instruction-title {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #16a34a;
+            margin-bottom: 2px;
+            text-align: center;
+        }
+
+        .feedback-banner {
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 0.96em;
+            line-height: 1.55;
+            text-align: center;
+            display: none;
+        }
+        .fb-correct {
+            background-color: #dcfce7;
+            color: #14532d;
+            border: 1px solid #86efac;
+        }
+        .fb-incorrect {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fca5a5;
+        }
+        .fb-warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        /* Pulsing Orange Glow Animation for Advance Buttons */
+        @keyframes pulse-orange-glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 11px rgba(249, 115, 22, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+            }
+        }
+
+        .btn-action {
+            background-color: #16a34a;
+            color: white;
+            border: 2px solid #f97316;
+            border-radius: 8px;
+            padding: 9px 20px;
+            font-size: 0.95em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            white-space: nowrap;
+            animation: pulse-orange-glow 1.7s infinite;
+        }
+        .btn-action:hover { 
+            background-color: #15803d; 
+            transform: scale(1.02);
+        }
+
+        /* Main Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+        }
+
+        /* T-Chart */
+        .t-chart-container {
+            border: 2px solid #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .t-chart-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: #1e293b;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.08em;
+            text-align: center;
+            padding: 9px 0;
+            letter-spacing: 0.01em;
+        }
+
+        .t-chart-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .column {
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .column:first-child {
+            border-right: 2px solid #334155;
+        }
+
+        .row-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            border-radius: 6px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            min-height: 42px;
+            box-sizing: border-box;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .row-slot.drag-over {
+            background: #e0f2fe;
+            border: 2px dashed #2563eb;
+        }
+
+        .row-slot.clickable {
+            cursor: pointer;
+            border: 2px solid #2563eb;
+            background: #eff6ff;
+        }
+
+        .row-slot.clickable:hover {
+            background: #dbeafe;
+        }
+
+        .var-label {
+            font-size: 1.08em;
+            font-weight: 600;
+        }
+
+        .slot-content {
+            font-weight: 600;
+            font-size: 1.0em;
+            color: #0f172a;
+            text-align: right;
+        }
+
+        /* Knowledge Bank (One-Column Vertical Stack) */
+        .knowledge-panel {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 14px 16px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-header {
+            font-weight: 700;
+            font-size: 1.0em;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .panel-subtitle {
+            font-size: 0.84em;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.35;
+        }
+
+        .bank-tiles-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .bank-tile {
+            background: #334155;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: 1.02em;
+            cursor: grab;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.15s, transform 0.1s;
+            user-select: none;
+        }
+
+        .bank-tile:hover:not(.disabled) {
+            background: #1e293b;
+        }
+
+        .bank-tile:active:not(.disabled) {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .bank-tile.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: #94a3b8;
+        }
+
+        /* Sign Check Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .sign-modal-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 22px 24px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .sign-modal-card h3 {
+            margin-top: 0;
+            font-size: 1.25em;
+            color: #0f172a;
+        }
+
+        .sign-modal-card p {
+            color: #475569;
+            font-size: 1.0em;
+            line-height: 1.55;
+            margin-bottom: 18px;
+        }
+
+        .sign-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sign {
+            flex: 1;
+            padding: 11px;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            font-size: 0.96em;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-sign:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        /* Copy Proof Section */
+        .copy-section {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px dashed #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-copy {
+            background-color: #475569;
+            color: white;
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.94em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-copy:hover { background-color: #334155; }
+        .copy-hint {
+            font-size: 0.8em;
+            color: #64748b;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="trainer-card" id="trainer-card">
+    <h2>Horizontal Projectile Motion Setup</h2>
+
+    <div class="score-row">
+        <span class="id-badge">ID: <span id="sim-id">---------</span></span>
+        <span id="problem-progress" style="color: #0f172a;">Problem 1 of 5</span>
+        <span class="phase-badge" id="phase-badge">Phase 1: Explicit Data</span>
+    </div>
+
+    <!-- Scaled SVG Motion Diagram (Unlabeled Cliff & Target As ?) -->
+    <div class="diagram-container">
+        <svg id="motion-svg" viewBox="0 0 540 155"></svg>
+    </div>
+
+    <!-- Question Narrative -->
+    <div class="question-container" id="question-card">
+        <!-- Rendered dynamically -->
+    </div>
+
+    <!-- Centered Instruction Banner -->
+    <div class="instruction-banner" id="instruction-banner">
+        <div id="instruction-content">
+            <span id="instruction-text">Drag given values from the question directly into the T-chart slots.</span>
+        </div>
+        <button class="btn-action" id="next-problem-btn" style="display: none;" onclick="advanceToNextProblem()">Next Problem</button>
+    </div>
+
+    <!-- Centered Feedback Banner -->
+    <div class="feedback-banner" id="feedback-banner"></div>
+
+    <div class="workspace">
+        <!-- The T-Chart -->
+        <div class="t-chart-container">
+            <div class="t-chart-header">
+                <div>Vertical</div>
+                <div>Horizontal</div>
+            </div>
+            <div class="t-chart-body">
+                <div class="column" id="col-vertical">
+                    <div class="row-slot" data-var="v_V1" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{v}}_{V1} =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="v_V2" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{v}}_{V2} =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="a_V" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{a}}_V =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="d_V" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{d}}_V =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="t" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">$t =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                </div>
+
+                <div class="column" id="col-horizontal">
+                    <div class="row-slot" data-var="v_H" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{v}}_H =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="d_H" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">${\vec{d}}_H =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                    <div class="row-slot" data-var="t" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <span class="var-label">$t =$</span>
+                        <span class="slot-content"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Bank (One-Column Vertical Stack) -->
+        <div class="knowledge-panel" id="knowledge-panel">
+            <div>
+                <div class="panel-header">Knowledge Bank (Implied Constants)</div>
+                <p class="panel-subtitle" id="bank-subtitle">
+                    Inactive during Phase 1. Activates once explicit givens are placed.
+                </p>
+            </div>
+            <div class="bank-tiles-column" id="bank-tiles">
+                <!-- KaTeX-rendered tiles -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Always-Visible Copy Proof Button Section -->
+    <div class="copy-section" data-html2canvas-ignore="true">
+        <button id="copy-btn" class="btn-copy" onclick="copyProofToClipboard()">📋 Copy Proof to Clipboard</button>
+        <span class="copy-hint">Click anytime to capture your card verification proof to paste (Ctrl+V) into Brightspace.</span>
+    </div>
+</div>
+
+<!-- Sign Selection Modal -->
+<div class="modal-overlay" id="sign-modal">
+    <div class="sign-modal-card">
+        <h3>Sign Check</h3>
+        <p id="modal-desc">Should this value be positive or negative in your kinematic calculations?</p>
+        <div class="sign-buttons">
+            <button class="btn-sign" onclick="applySign('positive')">positive (+)</button>
+            <button class="btn-sign" onclick="applySign('negative')">negative (&minus;)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ==========================================================================
+       Self-Contained SCORM 1.2 Engine & Revisit Protection
+       ========================================================================== */
+    const SCORM = {
+        api: null,
+        isInitialized: false,
+        alreadyCompleted: false,
+
+        findAPI(win) {
+            let attempts = 0;
+            while (!win.API && win.parent && win.parent !== win && attempts < 10) {
+                attempts++;
+                win = win.parent;
+            }
+            return win.API || null;
+        },
+
+        init() {
+            this.api = this.findAPI(window);
+            if (this.api) {
+                const res = this.api.LMSInitialize("");
+                if (res === "true" || res === true) {
+                    this.isInitialized = true;
+                    const status = this.get("cmi.core.lesson_status");
+                    if (status === "completed" || status === "passed") {
+                        this.alreadyCompleted = true;
+                    } else {
+                        this.set("cmi.core.lesson_status", "incomplete");
+                        this.save();
+                    }
+                }
+            }
+        },
+
+        get(param) {
+            if (this.isInitialized && this.api) {
+                return this.api.LMSGetValue(param);
+            }
+            return "";
+        },
+
+        set(param, val) {
+            if (this.isInitialized && this.api) {
+                return this.api.LMSSetValue(param, String(val));
+            }
+            return "false";
+        },
+
+        save() {
+            if (this.isInitialized && this.api) {
+                return this.api.LMSCommit("");
+            }
+            return "false";
+        },
+
+        recordMastery() {
+            this.alreadyCompleted = true;
+            if (this.isInitialized && this.api) {
+                this.set("cmi.core.score.raw", "100");
+                this.set("cmi.core.score.min", "0");
+                this.set("cmi.core.score.max", "100");
+                this.set("cmi.core.lesson_status", "completed");
+                this.save();
+            }
+        },
+
+        close() {
+            if (this.isInitialized && this.api) {
+                this.save();
+                this.api.LMSFinish("");
+                this.isInitialized = false;
+            }
+        }
+    };
+
+    window.addEventListener("load", () => SCORM.init());
+    window.addEventListener("beforeunload", () => SCORM.close());
+
+    /* ==========================================================================
+       Main Activity Logic
+       ========================================================================== */
+    function renderMath() {
+        if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
+    function generateId() {
+        const now = new Date();
+        const yearDigit = String(now.getFullYear()).slice(-1);
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const randomDigits = String(Math.floor(1000 + Math.random() * 9000));
+        return `${yearDigit}${month}${day}${randomDigits}`;
+    }
+
+    const templateDefinitions = [
+        {
+            text: (h, d, v) => `A test drone accelerates horizontally off a ${h} cliff and strikes the ocean surface ${d} from the base. What was its initial launch velocity?`,
+            givens: { d_V: 'h', d_H: 'd' },
+            target: 'v_H',
+            units: { d_V: '\\text{m}', d_H: '\\text{m}', v_H: '\\text{m/s}' }
+        },
+        {
+            text: (h, d, v) => `Landing ${d} away from the edge of a sheer drop, a boulder was dislodged horizontally at <span class="no-break-punct">${v}.</span> Calculate the vertical height of the drop.`,
+            givens: { d_H: 'd', v_H: 'v' },
+            target: 'd_V',
+            units: { d_H: '\\text{m}', v_H: '\\text{m/s}', d_V: '\\text{m}' }
+        },
+        {
+            text: (h, d, v) => `How far from the base of a ${h} tall ledge will an arrow impact the grass if it is shot horizontally with a velocity of <span class="no-break-punct">${v}?</span>`,
+            givens: { d_V: 'h', v_H: 'v' },
+            target: 'd_H',
+            units: { d_V: '\\text{m}', v_H: '\\text{m/s}', d_H: '\\text{m}' }
+        },
+        {
+            text: (h, d, v) => `A crate is rolled horizontally with a speed of ${v} off an elevated loading deck of height <span class="no-break-punct">${h}.</span> Determine the horizontal distance traversed before impact.`,
+            givens: { v_H: 'v', d_V: 'h' },
+            target: 'd_H',
+            units: { v_H: '\\text{m/s}', d_V: '\\text{m}', d_H: '\\text{m}' }
+        },
+        {
+            text: (h, d, v) => `During an experiment, a metal sphere rolls horizontally off a lab workbench having an elevation of ${h}. It lands on the floor ${d} from the bench leg. Find the horizontal velocity of the sphere.`,
+            givens: { d_V: 'h', d_H: 'd' },
+            target: 'v_H',
+            units: { d_V: '\\text{m}', d_H: '\\text{m}', v_H: '\\text{m/s}' }
+        }
+    ];
+
+    let randomizedDeck = [];
+    let currentProblemIdx = 0;
+    const totalProblems = 5;
+    let currentProblem = null;
+    let currentPhase = 1;
+    let pendingTile = null;
+    let selectedTileElement = null;
+
+    const knowledgeBankOptions = [
+        { math: '${\\vec{v}}_{V1} = 0\\text{ m/s}$', variable: 'v_V1', value: '$0\\text{ m/s}$', correct: true },
+        { math: '${\\vec{a}}_V = -9.81\\text{ m/s}^2$', variable: 'a_V', value: '$-9.81\\text{ m/s}^2$', correct: true },
+        { math: '${\\vec{a}}_V = +9.81\\text{ m/s}^2$', variable: 'a_V', value: '$+9.81\\text{ m/s}^2$', correct: false, reason: 'Gravity pulls downward, so ${\\vec{a}}_V$ must be negative.' },
+        { math: '${\\vec{v}}_H = 0\\text{ m/s}$', variable: 'v_H', value: '$0\\text{ m/s}$', correct: false, reason: 'The projectile has horizontal motion upon launch; it is not at rest horizontally.' },
+        { math: '${\\vec{a}}_H = -9.81\\text{ m/s}^2$', variable: 'a_H', value: '$-9.81\\text{ m/s}^2$', correct: false, reason: 'Gravity acts purely vertically, not horizontally.' }
+    ];
+
+    function randBetween(min, max, dec = 1) {
+        const factor = Math.pow(10, dec);
+        return (Math.floor(Math.random() * (max - min * factor + 1)) / factor + min).toFixed(dec);
+    }
+
+    function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function initExercise() {
+        randomizedDeck = shuffleArray(templateDefinitions);
+        currentProblemIdx = 0;
+        initProblem();
+    }
+
+    function initProblem() {
+        document.getElementById('sim-id').innerText = generateId();
+        clearChart();
+        document.getElementById('feedback-banner').style.display = 'none';
+        document.getElementById('next-problem-btn').style.display = 'none';
+        currentPhase = 1;
+        updatePhaseBadge();
+
+        const tpl = randomizedDeck[currentProblemIdx % randomizedDeck.length];
+        const hVal = randBetween(15, 55, 1);
+        const vVal = randBetween(10, 26, 1);
+        const tFlight = Math.sqrt((2 * parseFloat(hVal)) / 9.81);
+        const dVal = (parseFloat(vVal) * tFlight).toFixed(1);
+
+        const values = { h: hVal, d: dVal, v: vVal };
+
+        currentProblem = {
+            template: tpl,
+            givens: {},
+            target: tpl.target,
+            remainingExplicit: 0,
+            values: values
+        };
+
+        renderScaledDiagram(parseFloat(hVal), parseFloat(dVal), tpl.target);
+
+        const questionHTML = tpl.text(
+            `<span class="tile" draggable="true" data-type="d_V" data-val="${hVal}" data-unit="\\text{m}">$${hVal}\\text{ m}$</span>`,
+            `<span class="tile" draggable="true" data-type="d_H" data-val="${dVal}" data-unit="\\text{m}">$${dVal}\\text{ m}$</span>`,
+            `<span class="tile" draggable="true" data-type="v_H" data-val="${vVal}" data-unit="\\text{m/s}">$${vVal}\\text{ m/s}$</span>`
+        );
+
+        for (const [vKey, valCode] of Object.entries(tpl.givens)) {
+            currentProblem.givens[vKey] = {
+                num: values[valCode],
+                unit: tpl.units[vKey]
+            };
+            currentProblem.remainingExplicit++;
+        }
+
+        document.getElementById('question-card').innerHTML = questionHTML;
+        document.getElementById('problem-progress').innerText = `Problem ${currentProblemIdx + 1} of ${totalProblems}`;
+
+        attachTileListeners();
+        renderKnowledgeBank(false);
+        setInstruction("Drag given values from the question directly into the T-chart slots.");
+        renderMath();
+    }
+
+    /* True Parabola & Isotropic Diagram (Cliff Unlabeled & Unknown Shown as '?') */
+    function renderScaledDiagram(h, d, target) {
+        const svg = document.getElementById('motion-svg');
+        const groundY = 125;
+        const cliffLeft = 50;
+        const cliffRight = 100;
+
+        const maxDrawWidth = 390;
+        const maxDrawHeight = 92;
+        
+        const scale = Math.min(maxDrawWidth / d, maxDrawHeight / h);
+
+        const cliffHeightPx = Math.max(h * scale, 24);
+        const rangeWidthPx = Math.max(d * scale, 24);
+
+        const cliffTopY = groundY - cliffHeightPx;
+        const landX = cliffRight + rangeWidthPx;
+
+        const heightText = (target === 'd_V') ? '?' : `${h} m`;
+        const rangeText = (target === 'd_H') ? '?' : `${d} m`;
+
+        let parabolaPath = `M ${cliffRight} ${cliffTopY}`;
+        const steps = 30;
+        for (let i = 1; i <= steps; i++) {
+            const u = i / steps;
+            const px = cliffRight + u * rangeWidthPx;
+            const py = cliffTopY + (u * u) * cliffHeightPx;
+            parabolaPath += ` L ${px.toFixed(1)} ${py.toFixed(1)}`;
+        }
+
+        svg.innerHTML = `
+            <!-- Ground Line -->
+            <line x1="${cliffLeft - 10}" y1="${groundY}" x2="520" y2="${groundY}" stroke="#334155" stroke-width="2.5"/>
+            
+            <!-- Cliff Structure (Unlabeled) -->
+            <path d="M ${cliffLeft} ${groundY} L ${cliffRight} ${groundY} L ${cliffRight} ${cliffTopY} L ${cliffLeft} ${cliffTopY} Z" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+
+            <!-- Exact Parabolic Trajectory -->
+            <path d="${parabolaPath}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4"/>
+
+            <!-- Projectile at Launch -->
+            <circle cx="${cliffRight}" cy="${cliffTopY}" r="4.5" fill="#2563eb"/>
+
+            <!-- Landing Impact Marker -->
+            <circle cx="${landX}" cy="${groundY}" r="4.5" fill="#dc2626"/>
+
+            <!-- Vertical Height Indicator -->
+            <line x1="${cliffLeft - 18}" y1="${cliffTopY}" x2="${cliffLeft - 18}" y2="${groundY}" stroke="#64748b" stroke-width="1.5"/>
+            <line x1="${cliffLeft - 23}" y1="${cliffTopY}" x2="${cliffLeft - 13}" y2="${cliffTopY}" stroke="#64748b" stroke-width="1.5"/>
+            <line x1="${cliffLeft - 23}" y1="${groundY}" x2="${cliffLeft - 13}" y2="${groundY}" stroke="#64748b" stroke-width="1.5"/>
+            <text x="${cliffLeft - 26}" y="${(cliffTopY + groundY)/2 + 4}" font-size="11" font-weight="700" fill="#475569" text-anchor="end">${heightText}</text>
+
+            <!-- Horizontal Range Indicator -->
+            <line x1="${cliffRight}" y1="${groundY + 16}" x2="${landX}" y2="${groundY + 16}" stroke="#64748b" stroke-width="1.5"/>
+            <line x1="${cliffRight}" y1="${groundY + 11}" x2="${cliffRight}" y2="${groundY + 21}" stroke="#64748b" stroke-width="1.5"/>
+            <line x1="${landX}" y1="${groundY + 11}" x2="${landX}" y2="${groundY + 21}" stroke="#64748b" stroke-width="1.5"/>
+            <text x="${(cliffRight + landX)/2}" y="${groundY + 29}" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">${rangeText}</text>
+        `;
+    }
+
+    function clearChart() {
+        document.querySelectorAll('.row-slot').forEach(slot => {
+            slot.querySelector('.slot-content').innerHTML = '';
+            slot.classList.remove('clickable');
+            slot.onclick = null;
+        });
+    }
+
+    function setInstruction(msg, isPhase4 = false) {
+        const banner = document.getElementById('instruction-banner');
+        const content = document.getElementById('instruction-content');
+        
+        if (isPhase4) {
+            banner.className = 'instruction-banner phase4-prompt';
+            content.innerHTML = `
+                <div class="instruction-title">Which variable should be solved for first?</div>
+                <div>Look at the filled slots. Which variable can you calculate in a single step right now? Click it.</div>
+            `;
+        } else {
+            banner.className = 'instruction-banner';
+            content.innerHTML = `<span id="instruction-text">${msg}</span>`;
+        }
+        renderMath();
+    }
+
+    function showFeedback(msg, type = 'success') {
+        const fb = document.getElementById('feedback-banner');
+        fb.className = 'feedback-banner';
+        if (type === 'success') fb.classList.add('fb-correct');
+        else if (type === 'error') fb.classList.add('fb-incorrect');
+        else if (type === 'warning') fb.classList.add('fb-warning');
+        
+        fb.innerHTML = msg;
+        fb.style.display = 'block';
+        renderMath();
+    }
+
+    function updatePhaseBadge() {
+        const badge = document.getElementById('phase-badge');
+        const labels = {
+            1: "Phase 1: Explicit Data",
+            2: "Phase 2: Implied Constants",
+            3: "Phase 3: Target Unknown",
+            4: "Phase 4: Find Next Solvable"
+        };
+        badge.innerText = labels[currentPhase];
+    }
+
+    function attachTileListeners() {
+        document.querySelectorAll('#question-card .tile').forEach(tile => {
+            tile.addEventListener('dragstart', e => {
+                if (currentPhase !== 1) { e.preventDefault(); return; }
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    source: 'explicit',
+                    varType: tile.dataset.type,
+                    val: tile.dataset.val,
+                    unit: tile.dataset.unit,
+                    id: tile.innerText
+                }));
+            });
+
+            tile.addEventListener('click', () => {
+                if (currentPhase !== 1 || tile.classList.contains('placed')) return;
+                document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
+                tile.classList.add('selected');
+                selectedTileElement = tile;
+            });
+        });
+
+        document.querySelectorAll('.row-slot').forEach(slot => {
+            slot.addEventListener('click', () => {
+                if (currentPhase === 1 && selectedTileElement) {
+                    dropIntoSlot(slot, {
+                        source: 'explicit',
+                        varType: selectedTileElement.dataset.type,
+                        val: selectedTileElement.dataset.val,
+                        unit: selectedTileElement.dataset.unit,
+                        id: selectedTileElement.innerText
+                    });
+                    selectedTileElement.classList.remove('selected');
+                    selectedTileElement = null;
+                }
+            });
+        });
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const slot = e.currentTarget;
+        slot.classList.remove('drag-over');
+        const rawData = e.dataTransfer.getData('text/plain');
+        if (!rawData) return;
+        const data = JSON.parse(rawData);
+        dropIntoSlot(slot, data);
+    }
+
+    function dropIntoSlot(slot, data) {
+        const targetVar = slot.dataset.var;
+
+        if (currentPhase === 1) {
+            if (data.source !== 'explicit') {
+                showFeedback("Place explicit values from the problem description first.", 'error');
+                return;
+            }
+            if (data.varType !== targetVar) {
+                showFeedback(`Check the variable: that value represents ${getVarNameMath(data.varType)}, not ${getVarNameMath(targetVar)}.`, 'error');
+                return;
+            }
+
+            pendingTile = {
+                slot: slot,
+                targetVar: targetVar,
+                val: data.val,
+                unit: data.unit,
+                textId: data.id
+            };
+
+            openSignModal(data.varType, data.val, data.unit);
+        }
+        else if (currentPhase === 2) {
+            if (data.source !== 'bank') return;
+
+            if (!data.correct) {
+                showFeedback(data.reason, 'error');
+                return;
+            }
+
+            if (data.variable !== targetVar) {
+                showFeedback(`That constant belongs to ${getVarNameMath(data.variable)}, not ${getVarNameMath(targetVar)}.`, 'error');
+                return;
+            }
+
+            slot.querySelector('.slot-content').innerHTML = data.value;
+            disableBankTile(data.label);
+            renderMath();
+            checkPhase2Completion();
+        }
+    }
+
+    function getVarNameMath(v) {
+        const map = {
+            v_V1: '${\\vec{v}}_{V1}$',
+            v_V2: '${\\vec{v}}_{V2}$',
+            a_V: '${\\vec{a}}_V$',
+            d_V: '${\\vec{d}}_V$',
+            v_H: '${\\vec{v}}_H$',
+            d_H: '${\\vec{d}}_H$',
+            t: '$t$'
+        };
+        return map[v] || v;
+    }
+
+    function openSignModal(varType, val, unit) {
+        const modal = document.getElementById('sign-modal');
+        const desc = document.getElementById('modal-desc');
+        desc.innerHTML = `You are placing $${val}\\text{ m}$ into ${getVarNameMath(varType)}. Choose whether this value is positive or negative for downward or horizontal motion.`;
+        modal.classList.add('visible');
+        renderMath();
+    }
+
+    function applySign(choice) {
+        document.getElementById('sign-modal').classList.remove('visible');
+        if (!pendingTile) return;
+
+        const { slot, targetVar, val, unit } = pendingTile;
+
+        if (targetVar === 'd_V') {
+            if (choice !== 'negative') {
+                showFeedback("Because the projectile falls downward from the launch ledge, vertical displacement ${\\vec{d}}_V$ must be negative.", 'error');
+                return;
+            }
+        } else {
+            if (choice !== 'positive') {
+                showFeedback("Horizontal forward motion is defined in the positive direction.", 'error');
+                return;
+            }
+        }
+
+        const signSymbol = (choice === 'negative') ? '-' : '';
+        slot.querySelector('.slot-content').innerHTML = `$${signSymbol}${val}\\text{ }${unit}$`;
+
+        document.querySelectorAll('#question-card .tile').forEach(t => {
+            if (t.innerText.includes(val)) t.classList.add('placed');
+        });
+
+        currentProblem.remainingExplicit--;
+
+        if (currentProblem.remainingExplicit <= 0) {
+            currentPhase = 2;
+            updatePhaseBadge();
+            renderKnowledgeBank(true);
+            document.getElementById('bank-subtitle').innerText = "Drag the implied constants for a horizontal launch into the T-chart.";
+            setInstruction("Drag the implied values for a horizontal launch from the Knowledge Bank into the T-chart.");
+            showFeedback(`All explicit values placed with correct directions! Now drag the implied horizontal launch constants into the chart.`, 'success');
+        } else {
+            showFeedback(`Placed $${signSymbol}${val}\\text{ }${unit}$ into ${getVarNameMath(targetVar)}. Now place the remaining given value.`, 'success');
+        }
+        renderMath();
+    }
+
+    function renderKnowledgeBank(enabled) {
+        const bank = document.getElementById('bank-tiles');
+        bank.innerHTML = '';
+        knowledgeBankOptions.forEach(opt => {
+            const el = document.createElement('div');
+            el.className = 'bank-tile' + (enabled ? '' : ' disabled');
+            el.draggable = enabled;
+            el.innerHTML = opt.math;
+            el.dataset.label = opt.math;
+
+            if (enabled) {
+                el.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        source: 'bank',
+                        variable: opt.variable,
+                        value: opt.value,
+                        correct: opt.correct,
+                        reason: opt.reason,
+                        label: opt.math
+                    }));
+                });
+
+                el.addEventListener('click', () => {
+                    if (el.classList.contains('disabled')) return;
+                    document.querySelectorAll('.bank-tile').forEach(t => t.style.outline = 'none');
+                    el.style.outline = '2px solid #f59e0b';
+                    
+                    document.querySelectorAll('.row-slot').forEach(slot => {
+                        slot.onclick = () => {
+                            dropIntoSlot(slot, {
+                                source: 'bank',
+                                variable: opt.variable,
+                                value: opt.value,
+                                correct: opt.correct,
+                                reason: opt.reason,
+                                label: opt.math
+                            });
+                            el.style.outline = 'none';
+                        };
+                    });
+                });
+            }
+            bank.appendChild(el);
+        });
+        renderMath();
+    }
+
+    function disableBankTile(label) {
+        document.querySelectorAll('.bank-tile').forEach(t => {
+            if (t.dataset.label === label) t.classList.add('disabled');
+        });
+    }
+
+    function checkPhase2Completion() {
+        const v1 = document.querySelector('.row-slot[data-var="v_V1"] .slot-content').innerHTML;
+        const aV = document.querySelector('.row-slot[data-var="a_V"] .slot-content').innerHTML;
+
+        if (v1 && aV) {
+            currentPhase = 3;
+            updatePhaseBadge();
+            setInstruction("What is this problem asking you to find? Click the target variable slot in the chart.");
+            showFeedback("Both implied vertical values are set! Which value answers the problem?", 'success');
+            
+            document.querySelectorAll('.row-slot').forEach(slot => {
+                const currentVal = slot.querySelector('.slot-content').innerHTML.trim();
+                if (!currentVal) {
+                    slot.classList.add('clickable');
+                    slot.onclick = () => handleTargetSelect(slot);
+                }
+            });
+        }
+    }
+
+    function handleTargetSelect(slot) {
+        if (currentPhase !== 3) return;
+        const clickedVar = slot.dataset.var;
+
+        if (clickedVar === currentProblem.target) {
+            slot.querySelector('.slot-content').innerHTML = '$?$';
+            slot.classList.remove('clickable');
+
+            currentPhase = 4;
+            updatePhaseBadge();
+            setInstruction("", true);
+            showFeedback(`Target unknown identified: ${getVarNameMath(clickedVar)}. Now click which variable should be solved for first.`, 'success');
+            renderMath();
+
+            document.querySelectorAll('.row-slot').forEach(s => {
+                const val = s.querySelector('.slot-content').innerHTML.trim();
+                if (val === '' || val.includes('?')) {
+                    s.classList.add('clickable');
+                    s.onclick = () => handleOneStepSelect(s);
+                } else {
+                    s.classList.remove('clickable');
+                    s.onclick = null;
+                }
+            });
+        } else {
+            showFeedback(`Look closely at the question text. It asks for ${getVarNameMath(currentProblem.target)}, not ${getVarNameMath(clickedVar)}.`, 'error');
+        }
+    }
+
+    function handleOneStepSelect(slot) {
+        if (currentPhase !== 4) return;
+        const clickedVar = slot.dataset.var;
+        const isVertical = slot.closest('#col-vertical') !== null;
+
+        const hasV1 = !!document.querySelector('#col-vertical .row-slot[data-var="v_V1"] .slot-content').innerHTML;
+        const hasAV = !!document.querySelector('#col-vertical .row-slot[data-var="a_V"] .slot-content').innerHTML;
+        const hasDV = !!document.querySelector('#col-vertical .row-slot[data-var="d_V"] .slot-content').innerHTML;
+
+        const verticalKnownCount = (hasV1 ? 1 : 0) + (hasAV ? 1 : 0) + (hasDV ? 1 : 0);
+
+        if (verticalKnownCount >= 3) {
+            if (clickedVar === 't' && isVertical) {
+                completeProblem("Spot on! Time ($t$) is the crossover bridge. You have 3 vertical givens (${\\vec{v}}_{V1}, {\\vec{a}}_V, {\\vec{d}}_V$), allowing you to solve for $t$ using ${\\vec{d}}_V = {\\vec{v}}_{V1}t + \\frac{1}{2}{\\vec{a}}_V t^2$. Once you have $t$, you can cross over to find the target!");
+            } else if (clickedVar === 'v_V2') {
+                showFeedback("While ${\\vec{v}}_{V2}$ is mathematically calculable from 3 vertical givens, it is not what we want to solve for first. ${\\vec{v}}_{V2}$ does not help us bridge over to the horizontal side. We must solve for <strong>time ($t$)</strong> first!", 'warning');
+            } else {
+                showFeedback("Notice that the horizontal column only has 1 known value. You cannot solve a horizontal variable until you cross over with time ($t$).", 'error');
+            }
+        } else {
+            if (clickedVar === 't' && !isVertical) {
+                completeProblem("Spot on! Both horizontal displacement and velocity are known, so time can be found directly using $t = {\\vec{d}}_H / {\\vec{v}}_H$. Once you have $t$, you can cross over to find the vertical target!");
+            } else {
+                showFeedback("You do not have enough known values on that side yet to calculate that variable in a single step.", 'error');
+            }
+        }
+    }
+
+    function completeProblem(msg) {
+        document.querySelectorAll('.row-slot').forEach(slot => {
+            slot.classList.remove('clickable');
+            slot.onclick = null;
+        });
+
+        showFeedback(msg, 'success');
+        
+        const nextBtn = document.getElementById('next-problem-btn');
+        if (currentProblemIdx < totalProblems - 1) {
+            nextBtn.innerText = "Next Problem";
+        } else {
+            nextBtn.innerText = "Complete Exercise";
+        }
+        nextBtn.style.display = 'inline-block';
+    }
+
+    function advanceToNextProblem() {
+        if (currentProblemIdx < totalProblems - 1) {
+            currentProblemIdx++;
+            initProblem();
+        } else {
+            finishExercise();
+        }
+    }
+
+    function finishExercise() {
+        // Record 100% mastery in Brightspace Grade Book
+        SCORM.recordMastery();
+
+        const card = document.getElementById('trainer-card');
+        card.innerHTML = `
+            <h2>Horizontal Projectile Motion Setup</h2>
+            <div class="score-row">
+                <span class="id-badge">ID: <span id="sim-id">${generateId()}</span></span>
+                <span style="color: #16a34a; font-weight: 700;">Completed: 5 / 5 Problems</span>
+            </div>
+            <div style="text-align: center; padding: 32px 16px;">
+                <h3 style="font-size: 1.6em; color: #16a34a; margin-top: 0;">🎉 Setup Mastery Achieved!</h3>
+                <p style="font-size: 1.05em; color: #475569; max-width: 620px; margin: 0 auto 20px; line-height: 1.6;">
+                    Your completion score (100%) has been recorded in Brightspace. You can now use this page for unlimited extra practice without affecting your grade.
+                </p>
+                <button class="btn-action" style="display:inline-block; margin: 0 auto;" onclick="initExercise()">Practice More Scenarios</button>
+            </div>
+            <div class="copy-section" data-html2canvas-ignore="true">
+                <button id="copy-btn" class="btn-copy" onclick="copyProofToClipboard()">📋 Copy Proof to Clipboard</button>
+                <span class="copy-hint">Click to capture your card verification proof to paste (Ctrl+V) into Brightspace.</span>
+            </div>
+        `;
+        renderMath();
+    }
+
+    async function copyProofToClipboard() {
+        const copyBtn = document.getElementById('copy-btn');
+        const originalText = copyBtn.innerText;
+        copyBtn.innerText = "⏳ Capturing proof...";
+        copyBtn.disabled = true;
+
+        try {
+            const simElement = document.getElementById('trainer-card');
+            const canvas = await html2canvas(simElement, {
+                backgroundColor: "#ffffff",
+                scale: 2
+            });
+            
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert("Could not generate image. Please try again.");
+                    copyBtn.innerText = originalText;
+                    copyBtn.disabled = false;
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    copyBtn.innerText = "✅ Proof Copied to Clipboard!";
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                        copyBtn.disabled = false;
+                    }, 2500);
+                } catch (err) {
+                    console.error('Clipboard write error:', err);
+                    alert('Clipboard write blocked by browser permissions. Take a screenshot (Win+Shift+S or Cmd+Shift+4).');
+                    copyBtn.innerText = originalText;
+                    copyBtn.disabled = false;
+                }
+            }, 'image/png');
+        } catch (error) {
+            console.error('html2canvas capture error:', error);
+            alert('Failed to capture proof.');
+            copyBtn.innerText = originalText;
+            copyBtn.disabled = false;
+        }
+    }
+
+    window.onload = function() {
+        initExercise();
+    };
+</script>
+
+</body>
+</html>
